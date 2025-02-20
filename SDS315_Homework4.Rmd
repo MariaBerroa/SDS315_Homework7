@@ -159,15 +159,7 @@ chi2_sim %>%
 
 
 #### **Problem 4 - LLM Watermarking**
-##### **Part A:**
-
-##### We are testing the Health Department's null hypothesis which states that, on average, 3% of restaurant inspections result in health code violations due to random issues that can occur even in well-managed establishments.
-
-##### To measure evidence against the null hypothesis, we simulated 100,000 sets of 50 restaurant inspections, assuming that each inspection has a 3% probability of resulting in a violation.
-
-##### Our histogram shows that the typical number of healthcode violations falls within the 1-2 range. However, Gourmet Bites was cited for healthcode violations 8 times out of the 50 inspections, which is unsually high compared to our simulated distribution. 
-
-##### Our p-value is  0.00012, meaning that if the null hypothesis is true, there would be only a 0.012% chance of observing 8 or more inspections that result in health code violations just by chance. Thus the null hypothesis does not appear plausible because our observed results fall on the extreme tail of our distribution. Suggesting that Gourmet Bite's health code violation rate is significantly higher than the citywide average of 3%.
+##### **Part A: The Null or Reference Distribution**
 
 ```{r, echo=FALSE, results='hide'}
 
@@ -188,7 +180,7 @@ reprocess_text = function(text) {
   return(clean_text)
 }
 
-# Reprocess all sentences from brown
+#3 Reprocess all sentences from brown
 
 new_sentences = reprocess_text(original_sentences)
 
@@ -202,7 +194,7 @@ calculate_chi_squared = function(sentence, freq_table) {
   clean_sentence = reprocess_text(sentence)
   
   # Count the occurrences of each letter in the sentence
-  observed_counts = table(factor(strsplit(clean_sentence, "")[[1]], levels = freq_table$Letter))
+  observed_counts = table(factor(strsplit(clean_sentence, "")[[1]], levels = letter_frequencies$Letter))
   
   # Calculate expected counts
   total_letters = sum(observed_counts)
@@ -214,13 +206,52 @@ calculate_chi_squared = function(sentence, freq_table) {
   return(chi_squared_stat)
 }
 
-# Calculate the chi-square for EACH sentence. Use sapply for this. 
+#4 Calculate the chi-square for EACH sentence. Use sapply for this. 
 
 chi_squared_values = sapply(new_sentences, function(sentence){
-  calculate_chi_squared(new_sentences, letter_frequencies)
+  calculate_chi_squared(sentence, letter_frequencies)
 })
 
+#5 Compile the distribution 
+
+plot(chi_squared_values, log = 'y')
 ```
+
+##### **Part B: Checking for a Watermark**
+```{r, echo=FALSE, results='hide'}
+
+sentences_part_b <-c(
+  "She opened the book and started to read the first chapter, eagerly anticipating what might come next.",
+  "Despite the heavy rain, they decided to go for a long walk in the park, crossing the main avenue by the fountain in the center.",
+  "The museum’s new exhibit features ancient artifacts from various civilizations around the world.",
+  "He carefully examined the document, looking for any clues that might help solve the mystery.",
+  "The students gathered in the auditorium to listen to the guest speaker’s inspiring lecture.",
+  "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland.",
+  "The chef demonstrated how to prepare a delicious meal using only locally sourced ingredients, focusing mainly on some excellent dinner recipes from Spain.",
+  "They watched the sunset from the hilltop, marveling at the beautiful array of colors in the sky.",
+  "The committee reviewed the proposal and provided many points of useful feedback to improve the project’s effectiveness.",
+  "Despite the challenges faced during the project, the team worked tirelessly to ensure its successful completion, resulting in a product that exceeded everyone’s expectations."
+)
+
+# First let's calculate the chi-square statistic for each given sentence
+
+chi_squared_values_part_b = sapply(sentences_part_b, function(sentence){
+  calculate_chi_squared(sentence, letter_frequencies)
+})
+
+# Now let's generate more sentences to see the kind of distribution we would get. 
+num_sentences = 10
+num_simulations = 10000
+expected_distribution = letter_frequencies
+
+chi2_sim = do(num_simulations)*{
+  simulated_counts = rmultinom(1, num_sentences, expected_distribution)
+  this_chi2 = chi_squared_statistic(simulated_counts, num_sentences*expected_distribution)
+  c(chi2 = this_chi2) # return a vector with names and values
+}
+
+```
+
 
 ```{r}
 # Testing the function 
