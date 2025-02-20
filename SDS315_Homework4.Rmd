@@ -1,0 +1,180 @@
+---
+title: "SDS315 Homework4"
+date: "2025-02-19"
+output: html_document
+---
+
+##### Name: Maria Berroa
+
+##### UTEID: mpb2544
+
+##### GitHub: insert link here
+
+```{r, echo=FALSE, include=FALSE}
+#Import libraries and files
+library(ggplot2)
+library(tidyverse)
+library(mosaic)
+
+letter_frequencies <- read.csv("letter_frequencies.csv")
+
+```
+
+
+#### **Problem 1 - Iron Bank**
+
+##### We are testing SEC's null hypothesis which states that there is a 2.4% baseline probability that any "legal trade" will be flagged; whether it is from Iron Bank traders or other traders.
+
+##### To measure evidence against the null hypothesis, we simulated 100,000 sets of 2021 "legal trades", each having a 2.4% probability of being flagged.
+
+##### Our histogram shows that the typical number of flagged trades falls within the 45-55 range. However, we observed that Iron Bank got 70 trades flagged, which is unsually high compared to our simulated distribution. 
+
+##### Our p-value is 0.00197, meaning that if we assume the null hypothesis is true, there would be only a 0.20% probability of observing 70 or more flagged trades just by chance. Thus the null hypothesis does not appear plausible because 70 flagged trades falls on the extreme tail of our distribution. Suggesting that Iron Bank traders are getting flagged at a rate higher than 2.4%.
+
+```{r, echo=FALSE, results='hide'}
+
+#This gives us the probability of how many "flags" we would get if we made 2021 fair trades
+
+nflip(n=2021, prob=0.024)
+
+#We will repeat these "trades" several times to see what kind of data we would get.
+
+flag_simulation = do(100000)*nflip(n=2021, prob=0.024)
+
+#Now we visualize the distribution of the results
+
+ggplot(flag_simulation) + 
+  geom_histogram(aes(x=nflip), binwidth=1)
+
+#How many simulations yield 70 flags or more? 
+
+sum(flag_simulation >= 70)
+
+#As a proportion of the total number of simulations? 
+#This is our p value
+
+sum(flag_simulation >= 70)/100000
+
+```
+
+
+#### **Problem 2 - Health Inspections**
+
+##### We are testing the Health Department's null hypothesis which states that, on average, 3% of restaurant inspections result in health code violations due to random issues that can occur even in well-managed establishments.
+
+##### To measure evidence against the null hypothesis, we simulated 100,000 sets of 50 restaurant inspections, assuming that each inspection has a 3% probability of resulting in a violation.
+
+##### Our histogram shows that the typical number of healthcode violations falls within the 1-2 range. However, Gourmet Bites was cited for healthcode violations 8 times out of the 50 inspections, which is unsually high compared to our simulated distribution. 
+
+##### Our p-value is  0.00012, meaning that if the null hypothesis is true, there would be only a 0.012% chance of observing 8 or more inspections that result in health code violations just by chance. Thus the null hypothesis does not appear plausible because our observed results fall on the extreme tail of our distribution. Suggesting that Gourmet Bite's health code violation rate is significantly higher than the citywide average of 3%.
+
+```{r, echo=FALSE, results='hide'}
+
+#This gives us the probability of how many "health code violations" we would get if we conducted 50 inspections
+
+nflip(n=50, prob=0.03)
+
+#We will repeat these "inspections" several times to see what kind of distribution we would get.
+
+health_violation_simulation = do(100000)*nflip(n=50, prob=0.03)
+
+#Now we visualize the distribution of the results
+
+ggplot(health_violation_simulation) + 
+  geom_histogram(aes(x=nflip), binwidth=1)
+
+#How many simulations yield 8 violations or more? 
+
+sum(health_violation_simulation >= 8)
+
+#As a proportion of the total number of simulations? 
+#This is our p value
+
+sum(health_violation_simulation >= 8)/100000
+
+```
+
+#### **Problem 3 - Evaluating Jury Selection for Bias**
+
+##### The null hypthesis we are testing states that the jury selection process fairly represents the county's elegible population. Meaning the distribution of selected jurors aligns with the expected racial group proportions.
+
+##### To measure evidence against the null hypothesis, we first established the demographic breakdown of the county's elegible jury pool (our expected values) and compared it to the observed counts of empaneled jurors across 20 trials.Then, we proceeded to conduct 100,000 simulations, each selecting 240 jurors; assuming that each selection was proportional to the county's demographics. Finally, we computed the chi square statistic for each of the 100,000 simulations, assesing the deviation between the our expected and observered juror counts proportion.
+
+##### Our histogram shows that,on average, deviations from the expected jury distribution fall within the 1-7 range. However, the observed chi-square statistic we obtained from our observed jury selection is 12.43, which is unsually high compared to our simulated expected deviation distribution.
+
+##### Our p-value is  0.0136, meaning that if the null hypothesis is true, there would be only a 1.36% chance of observing a deviation of 12.43 or more just by chance. Since this is an extremely low probability, the null hypothesis does not appear plausible because our observed results fall on the extreme tail of our distribution. Suggesting that the jury selection is likely influenced by systematic bias.
+
+##### What might explain this discrepancy is changes in the eligible jury pool. Meaning that the composition of the county's population may have shifted, leading to incorrect expected proportions. Another explanation is injustice in the removal of jurors through premptory challenges. We could ask if there are specific populations getting removed at higher rates than others. To investigate this further, we could replicate this analysis across other county's and obtain updated demographic breakdowns in addition to further investigating dismissal patters on peremptory challenges.
+
+```{r, echo=FALSE, results='hide'}
+
+# Set the demographic breakdown of the country's eligible jury pool
+
+expected_breakdown = c(Group_1 = 0.30, Group_2 = 0.25, Group_3 = 0.20, Group_4 = 0.15, Group_5 = 0.10)
+observed_counts =  c(Group_1 = 85, Group_2 = 56, Group_3 = 59, Group_4 = 27, Group_5 = 13)
+sum(observed_counts)
+
+tibble(observed = observed_counts, expected = expected_breakdown*240)
+
+# "multinomial sampling" equals sampling from a named set of categories
+num_jurors = 240  # how many jurors per jury?
+simulated_counts = rmultinom(1, num_jurors, expected_breakdown)
+
+
+# compare "actual" with expected counts
+simulated_counts - num_jurors*expected_breakdown
+
+
+# Define a function to calculate the chi-squared statistic
+chi_squared_statistic = function(observed, expected) {
+  sum((observed - expected)^2 / expected)
+}
+
+chi2 = chi_squared_statistic(simulated_counts, num_jurors*expected_breakdown)
+chi2
+
+# Let's repeat this:
+num_simulations = 10000
+chi2_sim = do(num_simulations)*{
+  simulated_counts = rmultinom(1, num_jurors, expected_breakdown)
+  this_chi2 = chi_squared_statistic(simulated_counts, num_jurors*expected_breakdown)
+  c(chi2 = this_chi2) # return a vector with names and values
+}
+
+ggplot(chi2_sim) + 
+  geom_histogram(aes(x=chi2), binwidth = 1)
+
+
+# Calculate X^2 based on the observed group counts for empaneled jurors
+my_chi2 = chi_squared_statistic(observed_counts, num_jurors*expected_breakdown)
+my_chi2
+
+# p value?
+
+chi2_sim %>%
+  summarize(count(chi2 >=my_chi2) / n())
+
+
+```
+
+
+#### **Problem 4 - LLM Watermarking**
+##### **Part A:**
+
+##### We are testing the Health Department's null hypothesis which states that, on average, 3% of restaurant inspections result in health code violations due to random issues that can occur even in well-managed establishments.
+
+##### To measure evidence against the null hypothesis, we simulated 100,000 sets of 50 restaurant inspections, assuming that each inspection has a 3% probability of resulting in a violation.
+
+##### Our histogram shows that the typical number of healthcode violations falls within the 1-2 range. However, Gourmet Bites was cited for healthcode violations 8 times out of the 50 inspections, which is unsually high compared to our simulated distribution. 
+
+##### Our p-value is  0.00012, meaning that if the null hypothesis is true, there would be only a 0.012% chance of observing 8 or more inspections that result in health code violations just by chance. Thus the null hypothesis does not appear plausible because our observed results fall on the extreme tail of our distribution. Suggesting that Gourmet Bite's health code violation rate is significantly higher than the citywide average of 3%.
+
+```{r, echo=FALSE, results='hide'}
+
+#1 Read the sentences
+
+#readLines("brown_sentences.txt")
+
+```
+
+
