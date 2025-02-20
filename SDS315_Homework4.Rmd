@@ -239,16 +239,17 @@ chi_squared_values_part_b = sapply(sentences_part_b, function(sentence){
   calculate_chi_squared(sentence, letter_frequencies)
 })
 
-# Now let's generate more sentences to see the kind of distribution we would get. 
-num_sentences = 10
-num_simulations = 10000
-expected_distribution = letter_frequencies
+# p value?
+p_values_part_b <- sapply(chi_squared_values_part_b, function(observed_chi_squared){
+  p_value = sum(chi_squared_values >= observed_chi_squared) / length(chi_squared_values)
+  return(p_value)
+})
 
-chi2_sim = do(num_simulations)*{
-  simulated_counts = rmultinom(1, num_sentences, expected_distribution)
-  this_chi2 = chi_squared_statistic(simulated_counts, num_sentences*expected_distribution)
-  c(chi2 = this_chi2) # return a vector with names and values
-}
+p_values_table <- data.frame(
+  sentence = sentences_part_b,
+  p-value = p_values_part_b
+)
+
 
 ```
 
