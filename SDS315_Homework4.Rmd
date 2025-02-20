@@ -15,6 +15,7 @@ output: html_document
 library(ggplot2)
 library(tidyverse)
 library(mosaic)
+library(knitr)
 
 letter_frequencies <- read.csv("letter_frequencies.csv")
 
@@ -218,7 +219,8 @@ plot(chi_squared_values, log = 'y')
 ```
 
 ##### **Part B: Checking for a Watermark**
-```{r, echo=FALSE, results='hide'}
+##### The sentence that was produced by the LLM was sentence #6. "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland." We know that this sentence was produced by an LLM becasue out of the 10 sentences it had the lowest p-value: 0.009. Meaning that if the null hypthesis were true, there would be only a 0.9% probability of observing a standard letter frequency on this sentence. Thus, it is given that the low p-value for this sentence rejects the null hypthesis. 
+```{r, echo=FALSE}
 
 sentences_part_b <-c(
   "She opened the book and started to read the first chapter, eagerly anticipating what might come next.",
@@ -242,28 +244,13 @@ chi_squared_values_part_b = sapply(sentences_part_b, function(sentence){
 # p value?
 p_values_part_b <- sapply(chi_squared_values_part_b, function(observed_chi_squared){
   p_value = sum(chi_squared_values >= observed_chi_squared) / length(chi_squared_values)
-  return(p_value)
+  return(round(p_value,3))
 })
 
 p_values_table <- data.frame(
-  sentence = sentences_part_b,
-  p-value = p_values_part_b
-)
+  p_value = p_values_part_b)
 
+kable(p_values_table)
 
+#which.min(p_values_table$p_value)
 ```
-
-
-```{r}
-# Testing the function 
-
-#Pick a sentence
-example_sentence = new_sentences[1]
-example_sentence
-
-#Count the occurrences
-observed_counts = table(factor(strsplit(example_sentence, "")[[1]], levels = letter_frequencies$Letter))
-
-#It works 
-```
-
