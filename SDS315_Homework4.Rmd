@@ -173,8 +173,65 @@ chi2_sim %>%
 
 #1 Read the sentences
 
-#readLines("brown_sentences.txt")
+original_sentences <- readLines("brown_sentences.txt")
+
+#2 Preprocess the text
+
+# Function to reprocess text
+reprocess_text = function(text) {
+  alphabet = paste0(LETTERS, collapse = "")
+  
+  # Remove non-letters and convert to uppercase
+  clean_text = gsub("[^A-Za-z] ", "", text)
+  clean_text = toupper(clean_text)
+  
+  return(clean_text)
+}
+
+# Reprocess all sentences from brown
+
+new_sentences = reprocess_text(original_sentences)
+
+# Calculate letter count, compare with expected count, and compute chi-squared statistic
+calculate_chi_squared = function(sentence, freq_table) {
+  
+  # Ensure letter frequencies are normalized and sum to 1
+  freq_table$Probability = freq_table$Probability / sum(freq_table$Probability)
+  
+  # Remove non-letters and convert to uppercase (call pre-defined function above)
+  clean_sentence = reprocess_text(sentence)
+  
+  # Count the occurrences of each letter in the sentence
+  observed_counts = table(factor(strsplit(clean_sentence, "")[[1]], levels = freq_table$Letter))
+  
+  # Calculate expected counts
+  total_letters = sum(observed_counts)
+  expected_counts = total_letters * freq_table$Probability
+  
+  # Chi-squared statistic
+  chi_squared_stat = sum((observed_counts - expected_counts)^2 / expected_counts)
+  
+  return(chi_squared_stat)
+}
+
+# Calculate the chi-square for EACH sentence. Use sapply for this. 
+
+chi_squared_values = sapply(new_sentences, function(sentence){
+  calculate_chi_squared(new_sentences, letter_frequencies)
+})
 
 ```
 
+```{r}
+# Testing the function 
+
+#Pick a sentence
+example_sentence = new_sentences[1]
+example_sentence
+
+#Count the occurrences
+observed_counts = table(factor(strsplit(example_sentence, "")[[1]], levels = letter_frequencies$Letter))
+
+#It works 
+```
 
